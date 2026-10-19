@@ -1,4 +1,6 @@
-# Deploys the static site (index.html only) to GitHub Pages on every push to main.
+# Deploys the static site to GitHub Pages on every push to main:
+#   /     -> index.html     (v1, unchanged)
+#   /v2/  -> v2/index.html  (v2 Portfolio Hub)
 # Runs CI first; a failing check blocks deployment.
 name: Deploy to GitHub Pages
 
@@ -38,8 +40,9 @@ jobs:
 
       - name: Collect site files
         run: |
-          mkdir _site
+          mkdir -p _site/v2
           cp index.html _site/
+          cp v2/index.html _site/v2/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

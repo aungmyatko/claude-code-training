@@ -1,4 +1,4 @@
-# Checks for the single-file site: HTML validity, secret scan, and the project's hard constraints.
+# Checks for the site (v1 index.html and v2/index.html): HTML validity, secret scan, CSP hashes and the project's hard constraints.
 # Also called by deploy-pages.yml so a failing check blocks deployment.
 name: CI
 
@@ -18,8 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate index.html
-        run: npx --yes html-validate@8 index.html
+      - name: Validate index.html and v2/index.html
+        run: npx --yes html-validate@8 index.html v2/index.html
 
   secret-scan:
     name: Secret scan
@@ -42,14 +42,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check index.html for forbidden APIs and patterns
+      - name: Check pages for forbidden APIs and patterns
         run: |
           set -u
           fail=0
-          for pattern in 'localStorage' 'sessionStorage' 'indexedDB' 'document.cookie' 'alert(' 'confirm(' '!important' '<script src=' 'type="module"'; do
-            if grep -nF -- "$pattern" index.html; then
-              echo "::error file=index.html::Forbidden pattern found: $pattern"
-              fail=1
-            fi
+          for file in index.html v2/index.html; do
+            for pattern in 'localStorage' 'sessionStorage' 'indexedDB' 'document.cookie' 'alert(' 'confirm(' 'eval(' 'new Function' '!important' '<script src=' 'type="module"'; do
+              if grep -nF -- "$pattern" "$file"; then
+                echo "::error file=$file::Forbidden pattern found: $pattern"
+                fail=1
+              fi
+            done
           done
           exit $fail
+
+      - name: Check v2 Content-Security-Policy hashes are current
+        run: python3 tools/csp_hash.py v2/index.html --check
+
+      - name: Check v2 CSP has no unsafe sources
+        run: |
+          if grep -nE "unsafe-inline|unsafe-eval|'self' \*|default-src \*" v2/index.html; then
+            echo "::error file=v2/index.html::CSP must not allow unsafe-inline, unsafe-eval or wildcards"
+            exit 1
+          fi

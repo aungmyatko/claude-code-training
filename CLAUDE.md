@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A training/demo IT PMO Kanban board for a fictitious bank. The entire app is one file, `index.html`, with all markup, a `<style>` block and a `<script>` block. There is no build, no package manager, no tests and no linter.
 
+There are two versions, each a single self-contained file:
+
+- `index.html` is v1 (the original board), deployed at the site root. Leave it unchanged unless asked.
+- `v2/index.html` is v2, the Portfolio Hub (portfolio › program › project hierarchy, finance charts, blue theme with dark mode), deployed at `/v2/`. The architecture notes below apply to both. v2 adds the `PORTFOLIOS`, `PROGRAMS`, `PROJECT_DATA` and `FINANCE` reference data and render functions for the overview and charts.
+- v2 has a hash-based CSP meta tag. **After any edit to its `<script>` or `<style>`, run `python tools/csp_hash.py v2/index.html`**, or the page won't run. Don't add inline `style="..."` or event-handler attributes there, because the CSP blocks them. Set sizes through the CSSOM (`el.style.x = ...`) or SVG attributes instead.
+
 ## Hard constraints (from the original spec — keep them)
 
 - Vanilla HTML/CSS/JS only: no frameworks, libraries, CDNs, web fonts or image files. Use the system font stack and inline SVG/Unicode for icons.
