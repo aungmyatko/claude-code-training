@@ -1,0 +1,23 @@
+# Office documents and assessment material
+*.docx
+*.xlsx
+*.pptx
+*.pdf
+
+# Secrets and environment
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*.log
+
+# Local tooling
+.claude/settings.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+__pycache__/

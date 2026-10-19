@@ -1,0 +1,55 @@
+# Checks for the single-file site: HTML validity, secret scan, and the project's hard constraints.
+# Also called by deploy-pages.yml so a failing check blocks deployment.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  html-validate:
+    name: HTML validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate index.html
+        run: npx --yes html-validate@8 index.html
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  constraints:
+    name: Project constraints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check index.html for forbidden APIs and patterns
+        run: |
+          set -u
+          fail=0
+          for pattern in 'localStorage' 'sessionStorage' 'indexedDB' 'document.cookie' 'alert(' 'confirm(' '!important' '<script src=' 'type="module"'; do
+            if grep -nF -- "$pattern" index.html; then
+              echo "::error file=index.html::Forbidden pattern found: $pattern"
+              fail=1
+            fi
+          done
+          exit $fail
