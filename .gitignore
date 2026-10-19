@@ -21,3 +21,6 @@ id_rsa*
 .DS_Store
 Thumbs.db
 __pycache__/
+
+# Playwright MCP output (snapshots, console logs)
+.playwright-mcp/

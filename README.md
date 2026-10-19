@@ -15,6 +15,8 @@ An IT PMO Kanban board demo for a fictitious bank, built as a single file of van
 
 **<https://aungmyatko.github.io/claude-code-training/>**
 
+![IT PMO Kanban board showing Backlog, In Progress, Blocked and Done columns](docs/screenshot.png)
+
 ## Features
 
 - **Four status columns:** Backlog, In Progress, Blocked and Done, with per-column counts and a live summary in the header.
@@ -85,6 +87,8 @@ Two GitHub Actions workflows live in `.github/workflows/`:
 ├── CLAUDE.md                   # Guidance for Claude Code
 ├── .gitignore
 ├── .htmlvalidate.json          # html-validate config used by CI
+├── docs/
+│   └── screenshot.png          # README screenshot (not deployed to Pages)
 └── .github/
     └── workflows/
         ├── ci.yml              # Validation, secret scan, constraints check
