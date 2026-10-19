@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Security: strict CSP. The inline script and style blocks are allowed only by SHA-256 hash.
      After editing either block, run: python tools/csp_hash.py v2/index.html -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-IAPaqowRueC4sQbVf7wSM8jVGIDtaBnLPSL+mCGMxDk='; style-src 'sha256-gNSEM4fhVMJCOOzR/0QLdAncGTekJ8lpX4WNmCTM48s='; img-src data:; connect-src https://formsubmit.co; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/NyNcI3C+14UUlBZXa67hSevXm0yX/JVrrRAAPSNzoY='; style-src 'sha256-TeEf76gMT2MmbQ0Xb6YuYYlKQJEZTogEF6hVf+V6rNY='; img-src data:; connect-src https://formsubmit.co; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <title>IT PMO Portfolio Hub</title>
@@ -71,6 +71,8 @@
   --viz-axis: #8a96a8;
   --viz-budget: #0f1b2d;
 
+  --c-chat: #1a8f4c;
+  --c-chat-hover: #157a40;
   --c-toast-bg: #061a40;
   --c-toast-text: #ffffff;
   --c-backdrop: rgba(6, 26, 64, 0.55);
@@ -545,12 +547,27 @@ table.fin tfoot td { font-weight: 700; border-top: 2px solid var(--c-border-stro
 .hp-field { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .task-form, .modal-header { padding-left: var(--space-4); padding-right: var(--space-4); } }
 
+/* Timed announcement (Town Hall notice) */
+.notice-backdrop { align-items: center; z-index: 60; }
+.notice-modal { max-width: 440px; border-top: 5px solid var(--c-critical); }
+.notice-body { padding: var(--space-4) var(--space-5) var(--space-5); }
+.notice-body p { margin: 0 0 var(--space-3); }
+.notice-when { font-size: 16px; font-weight: 600; }
+.notice-mandatory { display: inline-block; padding: 2px var(--space-2); border-radius: var(--radius-sm); background: var(--c-critical-bg); color: var(--c-critical); border: 1px solid var(--c-critical-border); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
 /* Toasts */
-.toast-region { position: fixed; right: calc(var(--space-4) + env(safe-area-inset-right, 0px)); bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: var(--space-2); z-index: 100; max-width: calc(100vw - 2 * var(--space-4)); }
+.toast-region { position: fixed; right: calc(var(--space-4) + env(safe-area-inset-right, 0px)); bottom: calc(var(--space-4) + 56px + var(--space-3) + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: var(--space-2); z-index: 100; max-width: calc(100vw - 2 * var(--space-4)); }
 .toast { min-width: 240px; max-width: 380px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--c-toast-bg); color: var(--c-toast-text); box-shadow: var(--shadow-pop); border-left: 5px solid #6a9ef0; font-size: 13px; }
 .toast-success { border-left-color: #3ccf7f; }
 .toast-warning { border-left-color: var(--c-focus); }
 .toast strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; }
+
+/* Floating WhatsApp chat button */
+.chat-fab { position: fixed; right: calc(var(--space-4) + env(safe-area-inset-right, 0px)); bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--c-chat); color: var(--c-on-brand); box-shadow: var(--shadow-pop); text-decoration: none; transition: transform 0.15s ease, background-color 0.15s ease; }
+.chat-fab:hover { background: var(--c-chat-hover); transform: scale(1.06); }
+.chat-fab svg { width: 28px; height: 28px; }
+.chat-fab-label { position: absolute; right: calc(100% + var(--space-2)); white-space: nowrap; padding: var(--space-1) var(--space-3); border-radius: var(--radius-md); background: var(--c-toast-bg); color: var(--c-toast-text); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
+.chat-fab:hover .chat-fab-label, .chat-fab:focus-visible .chat-fab-label { opacity: 1; }
 
 .app-footer { padding-block: var(--space-4) var(--space-6); font-size: 12px; color: var(--c-text-muted); border-top: 1px solid var(--c-border); }
 
@@ -755,7 +772,30 @@ table.fin tfoot td { font-weight: 700; border-top: 2px solid var(--c-border-stro
   </div>
 </div>
 
+<!-- Town Hall announcement: shown once per page load after 10 s (see NOTICE_DELAY_MS) -->
+<div class="modal-backdrop notice-backdrop" id="noticeBackdrop" hidden>
+  <div class="modal notice-modal" role="alertdialog" aria-modal="true" aria-labelledby="noticeTitle" aria-describedby="noticeText">
+    <div class="modal-header">
+      <h2 id="noticeTitle">IT Security Briefing</h2>
+      <button type="button" class="icon-btn" id="closeNotice" aria-label="Close announcement">×</button>
+    </div>
+    <div class="notice-body">
+      <p id="noticeText">There is an IT security briefing at the <strong>Town Hall</strong>.</p>
+      <p class="notice-when">Wednesday, 10:00 am</p>
+      <p><span class="notice-mandatory">Attendance is mandatory</span></p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" id="ackNotice">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+<!-- Floating chat: opens WhatsApp (CHAT_WHATSAPP_NUMBER) and greets the user by voice -->
+<a class="chat-fab" id="chatFab" href="https://wa.me/6512345678" target="_blank" rel="noopener noreferrer" aria-label="Chat with IT PMO on WhatsApp (opens in a new tab)">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3C6.9 3 3 6.6 3 11c0 2.3 1.1 4.4 2.9 5.9L5 21l4.3-2.2c.9.2 1.8.3 2.7.3 5.1 0 9-3.6 9-8s-3.9-8.1-9-8.1zm-4 9.3a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zm4 0a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zm4 0a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6z"/></svg>
+  <span class="chat-fab-label" aria-hidden="true">How can I help you?</span>
+</a>
 <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
 
 <!-- =========================================================
@@ -1504,6 +1544,28 @@ function deleteTask(id) {
 }
 
 /* =========================================================
+   Floating chat (WhatsApp) with a spoken greeting
+   ========================================================= */
+const CHAT_WHATSAPP_NUMBER = "6512345678";
+const CHAT_GREETING = "How can I help you?";
+
+/* Uses the browser's built-in Web Speech API. Where it isn't available
+   the link still opens WhatsApp; the greeting is simply skipped. */
+function speakGreeting() {
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(CHAT_GREETING);
+  utterance.lang = "en-US";
+  window.speechSynthesis.speak(utterance);
+}
+
+function initChat() {
+  const fab = document.getElementById("chatFab");
+  fab.href = "https://wa.me/" + CHAT_WHATSAPP_NUMBER;
+  fab.addEventListener("click", speakGreeting);
+}
+
+/* =========================================================
    Toasts
    ========================================================= */
 function showToast(message, type) {
@@ -1694,12 +1756,35 @@ function openModal() {
 function closeModal() {
   document.getElementById("modalBackdrop").hidden = true;
   document.getElementById("openAddTask").focus();
+  if (noticePending) showNotice();
 }
 function isModalOpen() { return !document.getElementById("modalBackdrop").hidden; }
 
+/* Town Hall announcement — once per page load, after NOTICE_DELAY_MS.
+   If the Add Task dialog is open at that moment, it waits until it closes. */
+const NOTICE_DELAY_MS = 10000;
+let noticePending = false;
+let noticeReturnFocus = null;
+function showNotice() {
+  if (isModalOpen()) { noticePending = true; return; }
+  noticePending = false;
+  noticeReturnFocus = document.activeElement;
+  document.getElementById("noticeBackdrop").hidden = false;
+  document.getElementById("ackNotice").focus();
+}
+function closeNotice() {
+  document.getElementById("noticeBackdrop").hidden = true;
+  if (noticeReturnFocus && document.contains(noticeReturnFocus)) noticeReturnFocus.focus();
+  noticeReturnFocus = null;
+}
+function isNoticeOpen() { return !document.getElementById("noticeBackdrop").hidden; }
+
 function trapFocus(event) {
-  if (event.key !== "Tab" || !isModalOpen()) return;
-  const modal = document.querySelector(".modal");
+  if (event.key !== "Tab") return;
+  let modal = null;
+  if (isNoticeOpen()) modal = document.querySelector(".notice-modal");
+  else if (isModalOpen()) modal = document.querySelector("#modalBackdrop .modal");
+  if (!modal) return;
   const focusables = Array.prototype.filter.call(
     modal.querySelectorAll("button, input, select, textarea"),
     function (el) { return !el.disabled && el.tabIndex !== -1; }
@@ -1886,6 +1971,10 @@ function init() {
   document.getElementById("closeModal").addEventListener("click", closeModal);
   document.getElementById("cancelModal").addEventListener("click", closeModal);
   document.getElementById("modalBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById("closeNotice").addEventListener("click", closeNotice);
+  document.getElementById("ackNotice").addEventListener("click", closeNotice);
+  document.getElementById("noticeBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeNotice(); });
+  setTimeout(showNotice, NOTICE_DELAY_MS);
   document.getElementById("taskForm").addEventListener("submit", handleSubmit);
   document.getElementById("fTitle").addEventListener("input", updateCounters);
   document.getElementById("fDesc").addEventListener("input", updateCounters);
@@ -1895,6 +1984,7 @@ function init() {
     trapFocus(e);
     if (e.key !== "Escape") return;
     hideTip();
+    if (isNoticeOpen()) { closeNotice(); return; }
     if (isModalOpen()) { closeModal(); return; }
     const id = state.ui.openMoveId || state.ui.pendingDeleteId;
     if (id) {
@@ -1912,6 +2002,7 @@ function init() {
   });
 
   initTooltips();
+  initChat();
   seedTasks();
   renderKpis();
   renderTreemap();
